@@ -1,0 +1,121 @@
+ph1 = 3+j4
+ph2 = 5a30 or ph2 = 5a30 d
+ph3 = 5a2pi or ph3 = 5a2pi r
+ph4 = (ph1+ph2)*ph3
+
+ph1
+shall print:
+ph1 = 3+j4 = 5 /_ 30deg = 5 /_ pi/6 rad, color  = black
+
+ph1 col red
+shall change color of phasor 1 to red
+other allowed colors will be blue, black, yellow, violet, green, brown, purple and pink
+
+ph1 erase
+shall erase ph1 from canvas, but still keep its value stored in memory
+
+ph1 draw
+shall draw ph1 if its not already on cavas
+
+ph1 del
+shall delete ph1 from memory
+
+===
+find a key word in command
+keywords = [=, col, erase, draw, del]
+
+if no keyword found, print phasor details if it exists, if it doesn't exists, create new phasor and draw it
+=:
+evalue rhs and assign it to lhs
+
+col:
+if phasor exists, draw it with new color if color is valid
+
+erase:
+if phasor exists and is not visible, update list so that it'd be not drawn
+
+draw:
+if phasor exists and is not already visible, make it visible so that it'd be drawn
+
+del:
+if phasor exists delete it
+
+===
+evaluating rhs
+decomponse rhs into all possible phasors
+save each phasor as a key in dict
+if key is a phasor, send it to eval()
+else make a new phasor and send it to eval
+
+===
+making a new phasor
+allowed formats:
+
+a and b can be floats
+a+jb
+a-jb
+a+ib
+a-ib
+
+r and phi can be floats
+
+5ang30
+5ang30d
+5ang30r
+5ang 30 d
+5ang 2*pi r
+5ang30 d
+5ang30 r
+
+convert all these into
+5ang<rad>r
+ 
+(ph1*ph2-5 ang -60d)+58.56ang -58r*22 ang -7 /22*pir
+
+====
+import math
+import re
+class Phasor():
+    def __init__(self, x, y):
+        self._x = x
+        self._y = y
+        self.mag = (x**2+y**2)**0.5
+    
+    def __add__(self, other):
+        return Phasor(self._x+other._x, self._y+other._y)
+        
+    def __mul__(self, other):
+        return Phasor(self._x*other._x-other._y*self._y, self._y*other._x+self._x*other._y)
+    
+raw_command= input("Enter command")
+raw_command = raw_command.replace(' d','d').replace(' r','r').replace(' ang','ang').replace('ang ','ang').replace('pi','math.pi')
+print(raw_command)
+
+cc = raw_command[:]
+
+result = re.findall('arg(.+?)r', cc)
+
+for exp in result:
+    arg_index = cc.find('arg')
+    r_index = cc[arg_index+3:].find('r') + arg_index+3 #Since 'arg' contains 'r', we  add 3 to avoid finding it; then we add back arg_index+3 to get correct index in s
+    #Replace 'arg' with 'ARG' and 'r' with 'R', while adding result of expression inbetween
+    cc = cc[:arg_index] + 'ARG' + str(eval(exp)) + 'R'+ cc[r_index+1:]
+
+for i, c in enumerate(cc):
+    if c == '-':
+        if 'ang' in cc[i-4:i]:
+            cc = cc[:i]+'!'+cc[i+1:]
+
+cc = cc.replace('+',',').replace('-',',').replace('*',',').replace('/',',').replace('!','-')
+cc = cc.split(',')
+print(cc)
+print('--')
+
+    
+
+
+
+
+
+
+
