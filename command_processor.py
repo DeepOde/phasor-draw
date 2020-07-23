@@ -1,6 +1,7 @@
 import phasor
 import cmath
 import re
+import string
 
 PRECISION = 5 #Digits after 0 for angle in radian
 
@@ -11,6 +12,17 @@ def isnum(value):
         return True
     except ValueError:
         return False
+
+def valid_phasor_name(name):
+    if isnum(name[0]):
+        return False
+
+    allowed_chs = string.ascii_letters + string.digits + '_'
+    for c in name:
+        if c not in allowed_chs:
+            return False
+
+    return True
 
 def get_std_command(raw_command):
     '''Returns standard command where complex number in polar forms are expressed as 'rANGthetaR'
@@ -98,11 +110,32 @@ def eval_std_command(cc):
         return result
     else:
         return 'ERROR: Evaluation of command didn\'t result into number.'
-'''
+
 #TODO
 def process_input(command):
-    ''''Process the user input''''
+    '''Process the user input'''
 
     if '=' in command:
         parameters = command.split('=')
-     '''   
+        if valid_phasor_name(parameters[0]):
+            _phasor_name = parameters[0]
+            _std_command = get_std_command(parameters[1])
+            _phasor_cnumber = eval_std_command(_std_command)
+            if type(_phasor_cnumber ) == type('a'):
+                return _phasor_cnumber
+            else:
+                phasor.Phasor(_phasor_cnumber.real, _phasor_cnumber.imag, True, _phasor_name, True)
+                return True
+
+    if 'del' in command:
+        _phasor_name = command.split(' ')[0]
+        try:
+            phasor.Phasor.phasor_dict.pop(_phasor_name)
+            return True
+        except KeyError:
+            return 'No such phasor.'
+
+     
+
+
+            
