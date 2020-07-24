@@ -24,6 +24,15 @@ def valid_phasor_name(name):
 
     return True
 
+def valid_command(command):
+    allowed_chs = string.ascii_letters + string.digits + '_+-*/^.() '
+    for c in command:
+        if c not in allowed_chs:
+            return False
+
+    return True
+    
+
 def get_std_command(raw_command):
     '''Returns standard command where complex number in polar forms are expressed as 'rANGthetaR'
         e.g. '5ANG1R' where 'theta' a number between 'ANG' and 'R' represents angles in radian and
@@ -31,7 +40,9 @@ def get_std_command(raw_command):
 
         raw_command: RHS of an expression provided by user
         '''
-    raw_command = raw_command.replace(' ','').replace('arg','ang').replace('pi','cmath.pi')
+    raw_command = raw_command.replace('arg','ang').replace('pi','cmath.pi')
+    if not valid_command(raw_command):
+        return 'ERROR: Command contains illegal characters'
 
     cc = raw_command[:] #carbon copy of raw_command to mutate
 
@@ -73,12 +84,13 @@ def eval_std_command(cc):
     for operand in operands_list:
         if operand in phasor.Phasor.phasor_dict:
             operand_dict[operand] = phasor.Phasor.phasor_dict[operand].cnumber
-            final_command = final_command.replace(operand, operand_dict[operand])
+            final_command = final_command.replace(operand, str(operand_dict[operand]))
         else: #New phasor has to be constructed, supported formats : 'rANGthetaR, a, ja, aj'
             if 'ANG' in operand: #Operand is in ' rANGthetaR ' form
                 _operand_split = operand.split('ANG')
                 _operand_r = float(_operand_split[0])
                 _operand_theta = float(_operand_split[1][:-1]) #drop the last R
+                print("operand r, operand theta in rad",_operand_r, _operand_theta)
                 _operand_cnumber = _operand_r*cmath.cos(_operand_theta) +  _operand_r*cmath.sin(_operand_theta)*1j
                 final_command = final_command.replace(operand, str(_operand_cnumber))
                 
@@ -89,7 +101,6 @@ def eval_std_command(cc):
                     _operand_r = float(operand[1:])
                 else: #assuming j in end
                     _operand_r = float(operand[:-1])
-                print(_operand_r)
                 _operand_theta = cmath.pi/2
                 _operand_cnumber = _operand_r*cmath.cos(_operand_theta) +  _operand_r*cmath.sin(_operand_theta)*1j
                 final_command = final_command.replace(operand, str(_operand_cnumber))
@@ -114,11 +125,12 @@ def eval_std_command(cc):
 #TODO
 def process_input(command):
     '''Process the user input'''
+#    command = command.replace(' ','')
 
     if '=' in command:
         parameters = command.split('=')
-        if valid_phasor_name(parameters[0]):
-            _phasor_name = parameters[0]
+        if valid_phasor_name(parameters[0].strip()):
+            _phasor_name = parameters[0].strip()
             _std_command = get_std_command(parameters[1])
             _phasor_cnumber = eval_std_command(_std_command)
             if type(_phasor_cnumber ) == type('a'):
@@ -126,14 +138,50 @@ def process_input(command):
             else:
                 phasor.Phasor(_phasor_cnumber.real, _phasor_cnumber.imag, True, _phasor_name, True)
                 return True
+        else:
+            return "Invalid phasor name on left side"
 
-    if 'del' in command:
+    elif 'del' in command:
         _phasor_name = command.split(' ')[0]
         try:
             phasor.Phasor.phasor_dict.pop(_phasor_name)
             return True
         except KeyError:
             return 'No such phasor.'
+
+    elif 'col' in command:
+        allowed_colors = {'blue', 'black', 'yellow', 'violet', 'green', 'brown', 'purple', 'red'}
+        parameters = command.split('col')
+        if valid_phasor_name(parameters[0].strip()):
+            _phasor_name = parameters[0].strip()
+            if parameters[1].lower().strip() in allowed_colors:
+                _col_name = parameters[1].lower().strip()
+            else:
+                return 'Invalid color name'
+            phasor.Phasor.phasor_dict[_phasor_name]._color = _col_name
+            return True
+
+    elif 'erase' in command:
+        if valid_phasor_name(command.split('erase')[0].strip()):
+            _phasor_name = command.split('erase')[0].strip()
+            print("name is ")
+            print(_phasor_name)
+            print(phasor.Phasor.phasor_dict[_phasor_name]._todraw)
+            phasor.Phasor.phasor_dict[_phasor_name]._todraw = False
+            print(phasor.Phasor.phasor_dict[_phasor_name]._todraw)
+            print("dict after erasing is", phasor.Phasor.phasor_dict)
+
+    elif 'draw' in command:
+        if valid_phasor_name(command.split('draw')[0].strip()):
+            _phasor_name = command.split('draw')[0].strip()
+            print("name is ")
+            print(_phasor_name)
+            phasor.Phasor.phasor_dict[_phasor_name]._todraw = True
+
+    else:
+        if valid_phasor_name(command.strip()):
+            print(phasor.Phasor.phasor_dict[command.strip()])
+    
 
      
 

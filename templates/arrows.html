@@ -1,33 +1,37 @@
 <html>
 <head>
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-<script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script><script>
 /*Python script shall return on AJAX request, a complete drawarrow function, and shall then run drawcanvas funciton*/
 phasors = {};
 window.onload = function() {
+   alert("window loaded");
    scale = 1;
    canvas = document.getElementById("c");
    ctx = canvas.getContext("2d");
-   ctx.translate(300, 300);
+   resizecanvas();
    drawcanvas();
    drag = false;
    var dragStart;
    var dragEnd;
    
-   canvas.addEventListener('mousedown', function(event) {
+   function dragstart(event) {
     dragStart = {
       x: event.pageX - canvas.offsetLeft,
       y: event.pageY - canvas.offsetTop
     }
     drag = true;
-  })
-  
-  canvas.addEventListener('mouseup', function(event) {
+   }
+   canvas.addEventListener('mousedown', dragstart);
+   canvas.addEventListener('touchstart', dragstart);
+   canvas.addEventListener('mouseup', function(event) {
     drag = false;
-  })
+  });
+   canvas.addEventListener('touchend', function(event) {
+    drag = false;
+  });
 
   canvas.addEventListener('mousemove', function(event) {
     if (drag) {
@@ -45,36 +49,47 @@ window.onload = function() {
 } 
 
 window.onresize = function() {
-    canvas.innerHeight = canvas.innerWidth;
+    resizecanvas();
+	drawcanvas();
+}
+
+   
+function resizecanvas() {
+  window_width = document.documentElement.clientWidth;
+  window_height = document.documentElement.clientHeight;
+  max_dim = Math.min(window_height*.95, window_width*.95);
+  max_dim = Math.min(max_dim, 600);
+  canvas.width = max_dim;
+  canvas.height = max_dim;
+  ctx.translate(max_dim/2, max_dim/2);
 }
 
 function drawcanvas() {
   //Draw background
-  ctx.fillStyle = "#f2f2f2";
+  ctx.fillStyle = "#fefefe";
   ctx.fillRect(-1e10/ctx.getTransform()['a'], -1e10/ctx.getTransform()['a'], 2*1e10/ctx.getTransform()['a'], 2*1e10/ctx.getTransform()['a']);
-  
+  console.log("painted background");
   //Draws axes
   ctx.beginPath();
-  ctx.strokeStyle = 'black'; 
-  canvas_arrow(ctx, 0, 0, 1e10/ctx.getTransform()['a'], 0);
-  canvas_arrow(ctx, 0, 0, -1e10/ctx.getTransform()['a'], 0);
-  canvas_arrow(ctx, 0, 0, 0, 1e10/ctx.getTransform()['a']);
-  canvas_arrow(ctx, 0, 0, 0, -1e10/ctx.getTransform()['a']);
+  canvas_arrow(0, 0, 100000000/ctx.getTransform()['a'], 0, "#dcdcdc");
+  canvas_arrow(0, 0, -100000000/ctx.getTransform()['a'], 0, "#dcdcdc");
+  canvas_arrow(0, 0, 0, 100000000/ctx.getTransform()['a'], "#dcdcdc");
+  canvas_arrow(0, 0, 0,-100000000/ctx.getTransform()['a'], "#dcdcdc");
+  
   ctx.stroke();
   
   //Draw phasors
   ctx.lineWidth = 1.2/ctx.getTransform()['a'];
-  ctx.strokeStyle = 'red'; //allow user to change this.
-  ctx.beginPath();
+  //ctx.strokeStyle = 'red'; //allow user to change this.
   drawarrow(ctx);
-  ctx.stroke();
+  //ctx.stroke();
    
 }
 
 function drawarrow(ctx) {
   //canvas_arrow(ctx, 0, 0, 290, -290);
   for (var i = 0; i < Object.keys(phasors).length; i++) {
-		canvas_arrow(ctx, 0, 0, phasors[i][1], -phasors[i][2])
+		canvas_arrow(0, 0, phasors[i][1], -phasors[i][2], phasors[i][3])
   }
 }
 
@@ -100,19 +115,27 @@ function zoomout() {
   drawcanvas();
 }
 
-function canvas_arrow(context, fromx, fromy, tox, toy) {
+function restore() {
+  
+}
+function canvas_arrow(fromx, fromy, tox, toy, color) {
   var headlen = 10; // length of head in pixels
   var dx = tox - fromx;
   var dy = toy - fromy;
   var angle = Math.atan2(dy, dx);
-  context.moveTo(fromx, fromy);
-  context.lineTo(tox, toy);
-  context.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
-  context.moveTo(tox, toy);
-  context.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+  
+  ctx.beginPath();
+  ctx.strokeStyle = color; 
+  ctx.moveTo(fromx, fromy);
+  ctx.lineTo(tox, toy);
+  ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+  ctx.moveTo(tox, toy);
+  ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+  console.log("drew in "+color);
+  ctx.stroke();
 }
 
-function processreq() {
+function processreq(cmd) {
     /*
     var name = document.getElementById("name");
     var message = document.getElementById("message");
@@ -124,8 +147,7 @@ function processreq() {
     fetch('/reqprocess', {
       method: "POST",
       credentials: "include",
-      //body: JSON.stringify(no),
-	  body: "",
+      body: JSON.stringify(document.getElementById("commanddata").value),
       cache: "no-cache",
       headers: new Headers({
         "content-type": "application/json"
@@ -138,9 +160,12 @@ function processreq() {
         }
         response.json().then(function (data) {
 		    keys = Object.keys(data);
+			phasors = {}
             for (var i = 0; i < keys.length; i++) {
-			    phasors[i] = [data[i].name, data[i].x, data[i].y];
+			    phasors[i] = [data[i].name, data[i].x, data[i].y, data[i].color];
 			}
+			document.getElementById('commanddata').value="";
+			clearcanvas();
             drawcanvas();			
         });
       })
@@ -152,8 +177,18 @@ function processreq() {
 </head>
 
 <body>
-  <canvas id="c" class="h-75" height=600px width=600px style="border: solid 1px blue; padding-top=100%"></canvas><br />
+<div class="container" style="margin-left:0">
+  <div class="row" style="margin-left:0"><div id="canvaswrapper" style="margin-left:0"><canvas id="c" height=600 width=600 class="mb-2" style="border: solid 1px blue; padding-top=100%"></canvas><br /></div></div>
+  <div class="row">
+  <div class="col-12 col-md-6">
   <button onclick="zoomin()" class="btn btn-dark">+</button>
-  <button onclick="zoomout()" class="btn btn-dark">-</button>
-  <span id="stat"></span>
+  <button onclick="zoomout()" class="btn btn-dark ml-1 mr-1">-</button>
+  <button onclick="restore()" class="btn btn-dark ml-1 mr-1">100%</button>
+  <br /></div></div>
+  <div class="col-12 col-md-6">
+  <div class="row"><label for="commanddata" class="">Enter Commands Here (Enter new commands on new line): </label></div>
+  <div class="row"><div class="col-md-10 col-12"><textarea class="form-control text-white bg-dark" id="commanddata" rows="2"></textarea></div></div>
+  <div class="row"><div class="col-md-4 col-6"><button onclick="processreq()" class="btn btn-primary">Submit</button></div></div></div>
+  </div>
+  
 </body>
