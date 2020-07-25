@@ -17,9 +17,10 @@ def index():
 def process():
     ##Retrieve user's phasor dict and load it in the server
     serialised_phasor_dict = session['userdict'].copy()
+    
     #deserialise it
     for key, value in serialised_phasor_dict.items():
-        temp_phasor = phasor.Phasor(value['_x'], value['_y'], value['_user_created'], value['_name'], value['_todraw'], value['_color'])
+        temp_phasor = phasor.Phasor(value['_x'], value['_y'], value['_user_created'], value['_name'], value['_todraw'], value['_color'], value['_beginfrom'])
         
     cmds = request.get_json()
     for cmd in cmds.split('\n'):

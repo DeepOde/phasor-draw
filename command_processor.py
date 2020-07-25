@@ -128,15 +128,22 @@ def process_input(command):
 #    command = command.replace(' ','')
 
     if '=' in command:
+        beginfrom=''
+        if '@' in command:
+            beginfrom = command.split('@')[1].strip()
+            command = command.split('@')[0]
+            if not valid_phasor_name(beginfrom):
+                beginfrom = ''
         parameters = command.split('=')
         if valid_phasor_name(parameters[0].strip()):
             _phasor_name = parameters[0].strip()
-            _std_command = get_std_command(parameters[1])
+            _std_command = get_std_command(parameters[1].strip())
             _phasor_cnumber = eval_std_command(_std_command)
             if type(_phasor_cnumber ) == type('a'):
                 return _phasor_cnumber
             else:
-                phasor.Phasor(_phasor_cnumber.real, _phasor_cnumber.imag, True, _phasor_name, True)
+                print("i'm creating while processing phasor beginning from "+beginfrom)
+                phasor.Phasor(_phasor_cnumber.real, _phasor_cnumber.imag, True, _phasor_name, True, 'red', beginfrom)
                 return True
         else:
             return "Invalid phasor name on left side"

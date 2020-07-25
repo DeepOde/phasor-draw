@@ -7,22 +7,28 @@ class Phasor():
     _max_x = 1
     _max_y = 1
     
-    def __init__(self, x, y, user_created = False, name='', todraw = True, color='red'):
+    def __init__(self, x, y, user_created = False, name='', todraw = True, color='red', beginfrom=''):
+        print(color)
         self._x = x
         self._y = y
         self._user_created = user_created
         self._todraw = todraw
         self._color = color
         self._name = ''
+        self._beginfrom = beginfrom
+        
         if self._user_created:
             self._name = name
             Phasor.phasor_dict[self._name] = self
             print("appended to phasor dict, now it is",Phasor.phasor_dict)
         else:
             print("see it was,",self._user_created)
-
-        self.xpx = x
-        self.ypx = y
+        
+        self._xbegin = 0 #this will be updated while drawing, this ensures all phasor objects have been created
+        self._ybegin = 0 #this will be updated while drawing, this ensures all phasor objects have been created
+        
+        self.xpx = x #this can be deleted maybe
+        self.ypx = y #this can also be deleted maybe
 
         self.cnumber = self._x+self._y*1j
         self._mag = abs(self.cnumber)
@@ -51,8 +57,14 @@ class Phasor():
             if cls.phasor_dict[phasor]._todraw:
                 cls.phasor_dict[phasor]._xpx = (cls.phasor_dict[phasor]._x * 295)/cls._max_x #we want largest phasor to be of 295 px
                 cls.phasor_dict[phasor]._ypx = (cls.phasor_dict[phasor]._y * 295)/cls._max_y
+                if ((cls.phasor_dict[phasor]._beginfrom).strip() != '') and (cls.phasor_dict[phasor]._beginfrom in cls.phasor_dict):
+                    cls.phasor_dict[phasor]._xbegin = (cls.phasor_dict[cls.phasor_dict[phasor]._beginfrom]._x * 280)/cls._max_x
+                    cls.phasor_dict[phasor]._ybegin = (cls.phasor_dict[cls.phasor_dict[phasor]._beginfrom]._y * 280)/cls._max_y
+                else:
+                    cls.phasor_dict[phasor]._xbegin = 0
+                    cls.phasor_dict[phasor]._ybegin = 0
                 
-                phasordrawdata[i] = {'name':cls.phasor_dict[phasor]._name, 'x':cls.phasor_dict[phasor]._xpx, 'y':cls.phasor_dict[phasor]._ypx, 'color':cls.phasor_dict[phasor]._color}
+                phasordrawdata[i] = {'name':cls.phasor_dict[phasor]._name, 'x':cls.phasor_dict[phasor]._xpx, 'y':cls.phasor_dict[phasor]._ypx, 'color':cls.phasor_dict[phasor]._color, 'xbegin':cls.phasor_dict[phasor]._xbegin, 'ybegin':cls.phasor_dict[phasor]._ybegin, 'real':cls.phasor_dict[phasor]._x, 'imag':cls.phasor_dict[phasor]._y}
                 i += 1             
 
         ##Serialise phasor dict to and store in a session, then erase phasor dict
@@ -83,7 +95,7 @@ class Phasor():
         return Phasor(self._res_num.real, self._res_num.imag)    
         
     def __repr__(self):
-        return 'Phasor(' + str(self._x) + ', ' + str(self._y) + ', '+ str(self._user_created)+ ', ' + str(self._name) + ', '+ str(self._todraw) + ', '+ str(self._color) + ')'
+        return 'Phasor(' + str(self._x) + ', ' + str(self._y) + ', '+ str(self._user_created)+ ', ' + str(self._name) + ', '+ str(self._todraw) + ', '+ str(self._color) + ', ' + str(self._beginfrom) + ')'
 
     def __str__(self):
         return str(self.cnumber)
