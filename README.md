@@ -9,7 +9,7 @@ The tool is built keeping in mind that it should
 2. Be easy to learn
 3. Follow engineering professionals' and students' conventions
 4. Faciliate their convenience 
-5. Give same expereince on both phone and big screens.
+5. Give same experience on both phone and big screens.
 
 ### How to use the project
 Go to http://deepode.pythonanywhere.com/phasordraw and click on "First Time?" or "Complete Guide" buttons.
