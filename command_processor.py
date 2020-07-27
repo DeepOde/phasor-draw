@@ -84,6 +84,7 @@ def eval_std_command(cc):
     
     #Assign a Phasor object to each operand
     for operand in operands_list:
+        operand = operand.strip()
         if operand in phasor.Phasor.phasor_dict:
             operand_dict[operand] = phasor.Phasor.phasor_dict[operand].cnumber
             final_command = final_command.replace(operand, str(operand_dict[operand]))
