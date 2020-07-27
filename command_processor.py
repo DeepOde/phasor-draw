@@ -14,6 +14,7 @@ def isnum(value):
         return False
 
 def valid_phasor_name(name):
+    '''Returns true if 'name' consists only letters and underscore and doesn't begins with a number'''
     if isnum(name[0]):
         return False
 
@@ -25,6 +26,7 @@ def valid_phasor_name(name):
     return True
 
 def valid_command(command):
+    '''Returns true if 'command' consists only of letters, digits and required mathematical signs'''
     allowed_chs = string.ascii_letters + string.digits + '_+-*/^.() '
     for c in command:
         if c not in allowed_chs:
@@ -66,7 +68,7 @@ def eval_std_command(cc):
     '''Evaluates standard command cc to and returns a (possibly) complex no. of evaluation, otherwise returns a string showing error'''
     
     final_command = cc[:]
-    
+
     #Angles in radian might still contain preceeding '-', to separate it from operators specifying different terms, replace it temporarily with '!'
     for i, c in enumerate(cc):
         if c == '-':
@@ -90,17 +92,17 @@ def eval_std_command(cc):
                 _operand_split = operand.split('ANG')
                 _operand_r = float(_operand_split[0])
                 _operand_theta = float(_operand_split[1][:-1]) #drop the last R
-                print("operand r, operand theta in rad",_operand_r, _operand_theta)
                 _operand_cnumber = _operand_r*cmath.cos(_operand_theta) +  _operand_r*cmath.sin(_operand_theta)*1j
                 final_command = final_command.replace(operand, str(_operand_cnumber))
                 
             elif 'j' in operand or 'i' in operand:
-                operand = operand.replace('i','j').replace('j*','j')#For users who can't read instructions and type j*b instead of jb
+                operand = operand.replace('i','j').replace('j*','j').replace('-j','j-')#For users who can't read instructions and type j*b instead of jb
                 _j_index = operand.find('j')
                 if _j_index == 0: #j is in beginning
                     _operand_r = float(operand[1:])
                 else: #assuming j in end
                     _operand_r = float(operand[:-1])
+                    
                 _operand_theta = cmath.pi/2
                 _operand_cnumber = _operand_r*cmath.cos(_operand_theta) +  _operand_r*cmath.sin(_operand_theta)*1j
                 final_command = final_command.replace(operand, str(_operand_cnumber))
@@ -135,14 +137,17 @@ def process_input(command):
             if not valid_phasor_name(beginfrom):
                 beginfrom = ''
         parameters = command.split('=')
+        if (parameters[1].strip())[0] == '-':
+            raw_command = '0'+parameters[1].strip()
+        else:
+            raw_command = parameters[1].strip()
         if valid_phasor_name(parameters[0].strip()):
             _phasor_name = parameters[0].strip()
-            _std_command = get_std_command(parameters[1].strip())
+            _std_command = get_std_command(raw_command)
             _phasor_cnumber = eval_std_command(_std_command)
             if type(_phasor_cnumber ) == type('a'):
                 return _phasor_cnumber
             else:
-                print("i'm creating while processing phasor beginning from "+beginfrom)
                 phasor.Phasor(_phasor_cnumber.real, _phasor_cnumber.imag, True, _phasor_name, True, 'red', beginfrom)
                 return True
         else:
@@ -157,38 +162,33 @@ def process_input(command):
             return 'No such phasor.'
 
     elif 'col' in command:
-        allowed_colors = {'blue', 'black', 'yellow', 'violet', 'green', 'brown', 'purple', 'red'}
+        #All 140 colors supported by HTML are allowed, no server side check
         parameters = command.split('col')
         if valid_phasor_name(parameters[0].strip()):
             _phasor_name = parameters[0].strip()
-            if parameters[1].lower().strip() in allowed_colors:
-                _col_name = parameters[1].lower().strip()
-            else:
-                return 'Invalid color name'
+            #if parameters[1].lower().strip() in allowed_colors:
+            _col_name = parameters[1].lower().strip()
+            #else:
+            #    return 'Invalid color name'
             phasor.Phasor.phasor_dict[_phasor_name]._color = _col_name
             return True
 
     elif 'erase' in command:
         if valid_phasor_name(command.split('erase')[0].strip()):
             _phasor_name = command.split('erase')[0].strip()
-            print("name is ")
-            print(_phasor_name)
-            print(phasor.Phasor.phasor_dict[_phasor_name]._todraw)
             phasor.Phasor.phasor_dict[_phasor_name]._todraw = False
-            print(phasor.Phasor.phasor_dict[_phasor_name]._todraw)
-            print("dict after erasing is", phasor.Phasor.phasor_dict)
-
+            
     elif 'draw' in command:
         if valid_phasor_name(command.split('draw')[0].strip()):
             _phasor_name = command.split('draw')[0].strip()
-            print("name is ")
-            print(_phasor_name)
             phasor.Phasor.phasor_dict[_phasor_name]._todraw = True
 
     else:
-        if valid_phasor_name(command.strip()):
-            print(phasor.Phasor.phasor_dict[command.strip()])
+        #This function is now replaced by client side code
+        #if valid_phasor_name(command.strip()):
+         #   print(phasor.Phasor.phasor_dict[command.strip()])
     
+        pass
 
      
 

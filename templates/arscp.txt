@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script><script>
+	/*Python script shall return on AJAX request, a complete drawarrow function, and shall then run drawcanvas funciton*/
+	phasors = {};
+	window.onload = function() {
+	   scale = 1;
+	   canvas = document.getElementById("c");
+	   ctx = canvas.getContext("2d");
+	   resizecanvas();
+	   drawcanvas();
+	   drag = false;
+	   var dragStart;
+	   var dragEnd;
+	   
+	   function dragstart(event) {
+	    event.preventDefault();
+		dragStart = {
+		  x: event.pageX - canvas.offsetLeft,
+		  y: event.pageY - canvas.offsetTop
+		}
+		drag = true;
+	   }
+	   
+	   function dragend(event) {
+	     event.preventDefault();
+	     drag=false;
+	   }
+	   
+	   ["mousedown", "touchstart"].forEach(function(e) {
+	       canvas.addEventListener(e, dragstart, false);
+	   });
+	   
+	   ["mouseup", "touchend"].forEach(function(e) {
+	       canvas.addEventListener(e, dragend, false);
+	   });
+	   
+	   ["mousemove", "touchmove"].forEach(function(e) {
+	       canvas.addEventListener(e, function(e) {
+		   e.preventDefault();
+		   touch = undefined;
+	       if (typeof e.touches !== 'undefined') {
+		       touch = e.touches[0];
+			   pos_x = touch.pageX;
+			   pos_y = touch.pageY;
+		   } else {
+			   pos_x = e.pageX;
+			   pos_y = e.pageY;
+		   }
+		   if (drag) {
+		     dragEnd = {
+			 x: pos_x - canvas.offsetLeft,
+			 y: pos_y - canvas.offsetTop
+		   }
+		   ctx.translate(dragEnd.x - dragStart.x, dragEnd.y - dragStart.y);
+		   dragStart = dragEnd;
+		   clearcanvas();
+		   drawcanvas();
+		   }
+		
+	      });
+	    });
+
+    } 
+
+	window.onresize = function() {
+		resizecanvas();
+		drawcanvas();
+	}
+
+	function resizecanvas() {
+	  window_width = document.documentElement.clientWidth;
+	  window_height = document.documentElement.clientHeight;
+	  max_dim = Math.min(window_height*.95, window_width*.95);
+	  max_dim = Math.min(max_dim, 600);
+	  canvas.width = max_dim;
+	  canvas.height = max_dim;
+	  ctx.translate(max_dim/2, max_dim/2);
+	}
+
+	function drawcanvas() {
+	  //Draw background
+	  ctx.fillStyle = "#fefefe";
+	  ctx.fillRect(-1e10/ctx.getTransform()['a'], -1e10/ctx.getTransform()['a'], 2*1e10/ctx.getTransform()['a'], 2*1e10/ctx.getTransform()['a']);
+	  console.log("painted background");
+	  //Draws axes
+	  ctx.beginPath();
+	  canvas_arrow(0, 0, 100000000/ctx.getTransform()['a'], 0, "#dcdcdc");
+	  canvas_arrow(0, 0, -100000000/ctx.getTransform()['a'], 0, "#dcdcdc");
+	  canvas_arrow(0, 0, 0, 100000000/ctx.getTransform()['a'], "#dcdcdc");
+	  canvas_arrow(0, 0, 0,-100000000/ctx.getTransform()['a'], "#dcdcdc");
+	  
+	  ctx.stroke();
+	  
+	  //Draw phasors
+	  ctx.lineWidth = 1.2/ctx.getTransform()['a'];
+	  //ctx.strokeStyle = 'red'; //allow user to change this.
+	  drawarrow(ctx);
+	  //ctx.stroke();
+	   
+	}
+
+	function drawarrow(ctx) {
+	  //canvas_arrow(ctx, 0, 0, 290, -290);
+	  for (var i = 0; i < Object.keys(phasors).length; i++) {
+			canvas_arrow(phasors[i][4], -phasors[i][5], phasors[i][4]+phasors[i][1], -phasors[i][5]-phasors[i][2], phasors[i][3], phasors[i][0])
+	  }
+	}
+
+
+	function clearcanvas() {
+	  let current_transform = ctx.getTransform();
+	  ctx.setTransform(1.1, 0, 0, 1.1, 0, 0);
+	  ctx.clearRect(0, 0, canvas.width*scale, canvas.height*scale);
+	  ctx.setTransform(current_transform);
+	}
+
+	function zoomin() {
+	  clearcanvas();
+	  scale = 1.1;
+	  ctx.scale(scale, scale);
+	  drawcanvas();
+	}
+
+	function zoomout() {
+	  clearcanvas();
+	  scale = 1.0/1.1;
+	  ctx.scale(scale, scale);
+	  drawcanvas();
+	}
+
+	function restore() {
+	  clearcanvas();
+	  scale = 1.0/ctx.getTransform()['a'];
+	  ctx.scale(scale, scale);
+	  drawcanvas();
+	  
+	}
+	function canvas_arrow(fromx, fromy, tox, toy, color, label) {
+	  if (!label) label = '';
+	  var headlen = 10; // length of head in pixels
+	  var dx = tox - fromx;
+	  var dy = toy - fromy;
+	  var angle = Math.atan2(dy, dx);
+	  
+	  ctx.beginPath();
+	  ctx.strokeStyle = color; 
+	  ctx.moveTo(fromx, fromy);
+	  ctx.lineTo(tox, toy);
+	  ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+	  ctx.moveTo(tox, toy);
+	  ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+	  //draw_label(label, {x:fromx, y:fromy}, {x:tox, y:toy});
+	  console.log("drew in "+color);
+	  ctx.stroke();
+	  ctx.fillStyle = color;
+	  draw_label(label, {x:fromx, y:fromy}, {x:tox, y:toy});
+	}
+
+	function draw_label(text, p1, p2){
+			var alignment = 'center';
+			var padding = 3;
+			
+			var dx = p2.x - p1.x;
+			var dy = p2.y - p1.y;
+			var len = Math.sqrt(dx*dx+dy*dy);
+			var avail = len - 2*padding;
+			
+			
+			var textToDraw = text;
+			
+			/*if (ctx.measureText && ctx.measureText(textToDraw).width > avail){
+				while (textToDraw && ctx.measureText(textToDraw+"…").width > avail) textToDraw = textToDraw.slice(0,-1);
+				textToDraw += "…";
+			}*/
+
+			// Keep text upright
+			var angle = Math.atan2(dy,dx);
+			if (angle < -Math.PI/2 || angle > Math.PI/2){
+				var p = p1;
+				p1 = p2;
+				p2 = p;
+				dx *= -1;
+				dy *= -1;
+				angle -= Math.PI;
+			}
+			
+			var p, pad;
+			if (alignment=='center'){
+				p = p1;
+				pad = 1/2;
+			} 
+			ctx.save();
+	//		ctx.fillStyle = '#666';
+			ctx.font  = '14pt'+' Arial';
+			ctx.textAlign = alignment;
+			ctx.translate(p.x+dx*pad,p.y+dy*pad);
+			ctx.rotate(angle);
+			ctx.fillText(textToDraw,0,0);
+			ctx.restore();
+	}
+		
+	function updatephasortable() {
+		tablehtml = "<table class=\"table\"><thead class=\"thead-dark\"><tr><th scope=\"col\">Phasor Name</th><th scope=\"col\">Rectangular Form</th><th scope=\"col\">Polar Form</th><th scope=\"col\">Color</th></tr></thead><tbody>";
+		for (var i = 0; i < Object.keys(phasors).length; i++) {
+			//canvas_arrow(phasors[i][4], -phasors[i][5], phasors[i][4]+phasors[i][1], -phasors[i][5]-phasors[i][2], phasors[i][3], phasors[i][0])
+			tablehtml += "<tr><th scope=\"row\">"+phasors[i][0]+"</th><td>";
+			var representation = phasors[i][0]+" = "+Math.round(phasors[i][6]*100000)/100000;
+				if (phasors[i][7] > 0) {
+					representation += " + j"+Math.round(phasors[i][7]*100000)/100000;
+				} else {
+					representation += " - j"+Math.abs(Math.round(phasors[i][7]*100000)/100000);
+				}
+			tablehtml += representation+"</td><td>";
+			var anginr = Math.atan(phasors[i][7]/phasors[i][6])
+			var representation = "Magnitude: " + Math.round(Math.pow(Math.pow(phasors[i][6], 2) + Math.pow(phasors[i][7], 2), 0.5)*100000)/100000 +", Phase (deg): "+Math.round((anginr*180/Math.PI)*10000)/10000+", Phase (rad): "+ Math.round(anginr*10000)/10000+ " = "+ Math.round((anginr/Math.PI)*1000)/1000+"*PI";
+			tablehtml += representation+"</td><td>";
+			tablehtml += phasors[i][3]+"</td></tr>";
+		}
+		tablehtml += "</tbody></table>";
+		document.getElementById("phasorstable").innerHTML = tablehtml;
+	}
+
+	function processreq(cmd) {
+		usercmd = document.getElementById('commanddata').value;
+		if ((usercmd.includes("=")) || (usercmd.includes("del")) || (usercmd.includes("col")) || (usercmd.includes("erase")) || (usercmd.includes("draw"))) {
+		  fetch('/reqprocess', {
+		  method: "POST",
+		  credentials: "include",
+		  body: JSON.stringify(document.getElementById("commanddata").value),
+		  cache: "no-cache",
+		  headers: new Headers({
+			"content-type": "application/json"
+		  })
+		  })
+		  .then(function (response) {
+			if (response.status !== 200) {
+			  console.log(`Looks like there was a problem. Status code: ${response.status}`);
+			  return;
+			}
+			response.json().then(function (data) {
+				keys = Object.keys(data);
+				phasors = {}
+				for (var i = 0; i < keys.length; i++) {
+					phasors[i] = [data[i].name, data[i].x, data[i].y, data[i].color, data[i].xbegin, data[i].ybegin, data[i].real, data[i].imag];
+				}
+				document.getElementById('commandhist').value+= document.getElementById('commanddata').value+'\n';
+				document.getElementById('commanddata').value="";
+				clearcanvas();
+				drawcanvas();
+				updatephasortable();			
+			});
+		   })
+		   .catch(function (error) {
+			 console.log("Fetch error: " + error);
+		   });
+		} else {
+			var phname = usercmd.trim();
+			for (i = 0; i < Object.keys(phasors).length; i++) {
+				if (phname == phasors[i][0]) {
+					console.log(i);
+					var representation = phasors[i][0]+" = "+Math.round(phasors[i][6]*100000)/100000;
+					if (phasors[i][7] > 0) {
+						representation += " + j"+Math.round(phasors[i][7]*100000)/100000;
+					} else {
+						representation += " - j"+Math.abs(Math.round(phasors[i][7]*100000)/100000);
+					}
+					var anginr = Math.atan(phasors[i][7]/phasors[i][6])
+					representation += " = Magnitude: " + Math.round(Math.pow(Math.pow(phasors[i][6], 2) + Math.pow(phasors[i][7], 2), 0.5)*100000)/100000 +", Phase (deg): "+Math.round((anginr*180/Math.PI)*10000)/10000+", Phase (rad): "+ Math.round(anginr*10000)/10000+ " = "+ Math.round((anginr/Math.PI)*1000)/1000+"*PI";
+					document.getElementById('shortans').innerHTML = representation;
+					document.getElementById('commandhist').value+= document.getElementById('commanddata').value+'\n';
+					document.getElementById('commanddata').value="";
+				}  
+			}
+		}		
+	}
+	</script>
+	</head>
+
+	<body>
+	<nav class="navbar navbar-expand-sm bg-dark navbar-dark mb-1">
+  <ul class="navbar-nav">
+    <li class="nav-item active">
+      <a class="navbar-brand text-white" href="#">
+    <img src="{{ url_for('static', filename='phdrawlogonew3.png') }}" width="30" height="30" class="d-inline-block align-top" alt="">
+    Phasor Draw<small class="text-light">&nbsp; <i>By Deep</i></small>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="https://github.com/DeepOde/phasor-draw">View on GitHub</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="https://deepode.pythonanywhere.com/">Quill <i>AI</i></a>
+    </li>
+	
+  </ul>
+  </nav>
+
+	<div class="container" style="margin-left:5px padding-top:5px margin-right:0px">
+	  <div class="row" style="margin-left:0"><div id="canvaswrapper" style="margin-left:0px padding-top:5px"><canvas id="c" height=600 width=600 class="mb-2" style="border: solid 1px blue; padding-top=100%"></canvas><br /></div></div>
+	  <div class="row">
+	  <div class="col-12 col-md-6">
+	  <button onclick="zoomin()" class="btn btn-dark">+</button>
+	  <button onclick="zoomout()" class="btn btn-dark ml-1 mr-1">-</button>
+	  <button onclick="restore()" class="btn btn-dark ml-1 mr-1">100%</button>
+	  <button class="btn btn-secondary ml-1 mr-1" data-toggle="collapse" href="#cmdlist" role="button" aria-expanded="false" aria-controls="cmdlist">First time?</button>
+	  <button class="btn btn-secondary  ml-1 mr-1" type="button" data-toggle="collapse" data-target="#first-time" aria-expanded="false" aria-controls="first-time">Complete guide</button>
+	  <div class="collapse" id="first-time">
+	  <div class="card card-body">
+	    <b>See all forms of a phasor</b>Just write the name of the phasor you want to see
+		<mark><code>v_supply = 3+j4</code></mark>
+		<mark><code>v_supply</code></mark>
+		will print
+		<mark><code>v = 3 + j4 = Magnitude: 5, Phase (deg): 53.1301, Phase (rad): 0.9273 = 0.295*PI</code></mark>
+		
+		
+		<b>Drawing new phasor at the tip of another:</b><p>To draw new phasor, say <mark><code>b</mark></code> at the end of already defined phasor, say <mark><code>a</mark></code>, add <mark><code>@ a</mark></code> while defining b. For e.g.,</p>
+		<mark><code>v_terminal = 230 ang 0 d</mark></code>
+		<mark><code>drop = 30 + j30 @ v_terminal</mark></code>
+		<mark><code>e = v_terminal + drop</mark></code>
+		<b>Changing color:</b>All phasors are by default drawn in red, you can change them as follows
+		<mark><code>phasor_name col black</code></mark>
+		<p>If you're a boy, we support all the colors you know. If you're a girl, we currently only support <a href="https://www.w3schools.com/colors/colors_names.asp">140 colors listed here. </a></p>
+		
+		<b>Erase a phasor:</b>Using following command will erase a phasor but it is still stored in memory, we just don't draw it, you can use it for calculations
+		<mark><code>phasor_name erase</code></mark>
+		
+		<b>Redraw a phasor:</b>Following command redraws earlier erased phasors
+		<mark><code>phasor_name erase</code></mark>
+		
+		<b>Deleting a phasor:</b>Following command removes a phasor from memory.
+		<mark><code>phasor_name del</code></mark>
+	  </div>
+	  </div>
+	  <div class="collapse" id="cmdlist">
+	  <div class="card card-body">
+        <h5>Hi, there :)!</h5>
+		<p>This tool helps you to draw complex phasors quickly. Let's get started...</p>
+		<b>Creating phasors:</b> <p><mark><code>phasor_name </code></mark> in following commands could be anything you want, consisting of letters, numbers and underscores, but it must not start with a number. You can use any of the following ways to create new phasors...</p>
+		<mark><code>phasor_name = 3-j4</code></mark>
+		Polar forms can be specified as
+		<mark><code>phasor_name = 5 arg 30 d</code></mark>
+		<mark><code>phasor_name = 5 ang pi/6 r</code></mark>
+		<p>Polar representation starts with magnitude which can be followed by either <mark><code>ang</code></mark> or <mark><code>arg</code></mark>. It must end with either <mark><code>d</code></mark> or <mark><code>r</code></mark>to specify whether angle has been entered in degree or radian.
+		The number or expression between <mark><code>ang</code></mark> or <mark><code>arg</code></mark> and <mark><code>d</code></mark> or <mark><code>r</code></mark> is treated as value of the phase. </p>
+		<p>NOTE: If phasor is purely imaginary with negative imaginary part don't use <mark><code>phasor_name = -j5</mark></code> instead you can use any of the following</p>
+		<mark><code>phasor_name = j-5</code></mark>
+		<mark><code>phasor_name = 0-j5</code></mark>
+		Phasor will be automatically drawn every time you define them, you can use it's name to refer it later to assign new phasors, for e.g.
+		<mark><code>v_terminal = v_induced - (20+j10)</code></mark>
+		<p>Entering name of already defined phasors, shows it complete description. To see it's use and other commands to change color of a phasor or to erase, delete or redraw it, click on the 'Complete guide' button above.</p>		
+	  </div>
+	  </div>
+	  <br /></div></div>
+	  
+	  <div class="row"><label for="commanddata" class="ml-3">Enter commands here (Enter new command on a new line): </label></div>
+	  <div class="row"><div class="col-md-6 col-12"><textarea class="form-control text-white bg-dark" id="commanddata" rows="2" style='font-family: "Lucida Console", Monaco, monospace'></textarea></div></div>
+	  <div class="row"><div class="col-md-8 col-12"><p id="shortans" style="display:inline" class="text-light bg-secondary"></p></div></div>
+	  <div class="row mt-1 mb-1"><div class="col-md-6 col-12">
+		<button onclick="processreq()" class="btn btn-primary ml-1 mr-1">Submit</button>
+		<button class="btn btn-secondary ml-1 mr-1" data-toggle="collapse" href="#phasorstable" role="button" aria-expanded="false" aria-controls="phasorstable">Phasors list</button>
+		<button class="btn btn-secondary  ml-1 mr-1" type="button" data-toggle="collapse" data-target="#commandhist" aria-expanded="false" aria-controls="commandhist">Command history</button></div>
+	   </div>
+	  <div class="collapse col-md-6 col-12 ml-2" id="phasorstable">
+	  
+	  </div>
+	  <div class="row"><div class="col-md-6 col-12"><textarea class="form-control text-black bg-light mb-1" id="commandhist" rows="2" style='font-family: "Lucida Console", Monaco, monospace'></textarea></div></div>
+	</div>  
+	
+	</body>
+</html>

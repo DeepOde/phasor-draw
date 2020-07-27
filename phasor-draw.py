@@ -7,21 +7,22 @@ app.secret_key = 'alohamora9andThreeqauraterS'
 
 @app.route('/')
 def index():
+    '''Initialize program'''
     session.permanent = False
-    session['userdict'] = {}
-    if 'userdict' not in session:
-        session['userdict'] = {}
+    session['userdict'] = {} #This dictionary stores phasors objects, name of phasor object -> attributes of phasor objects
     return render_template('arrows.html')
 
 @app.route('/reqprocess', methods=['POST'])
 def process():
-    ##Retrieve user's phasor dict and load it in the server
+    '''Process user commands'''
+    #Retrieve user's phasor dict and load it in the server
     serialised_phasor_dict = session['userdict'].copy()
     
-    #deserialise it
-    for key, value in serialised_phasor_dict.items():
+    #Deserialise it
+    for key in sorted(serialised_phasor_dict, key=lambda x:serialised_phasor_dict[x]['_id']):
+        value = serialised_phasor_dict[key]
         temp_phasor = phasor.Phasor(value['_x'], value['_y'], value['_user_created'], value['_name'], value['_todraw'], value['_color'], value['_beginfrom'])
-        
+
     cmds = request.get_json()
     for cmd in cmds.split('\n'):
         if cmd.strip() != '':
